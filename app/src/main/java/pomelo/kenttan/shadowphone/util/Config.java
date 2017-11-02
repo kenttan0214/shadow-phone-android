@@ -15,4 +15,6 @@ public class Config {
     public static final String SHARED_PREF = "shadowphone";
     public static final String TOKEN = "token";
     public static final String SMS_RECEIVED = "android.provider.Telephony.SMS_RECEIVED";
+
+    public static final String GOOGLE_REQUESTID_TOKEN = "721489690199-a289vf2smnnkvji6ikhvg1mtsqrr27hi.apps.googleusercontent.com";
 }
