@@ -38,11 +38,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Button listeners
         findViewById(R.id.sign_in_button).setOnClickListener(this);
-        findViewById(R.id.sign_out_button).setOnClickListener(this);
-        findViewById(R.id.disconnect_button).setOnClickListener(this);
-
 
         // Configure sign-in to request the user's ID, email address, and basic
         // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
@@ -65,13 +61,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     public void onStart() {
         super.onStart();
         FirebaseUser currentUser = mAuth.getCurrentUser();
-    }
-
-    private void updateUI(FirebaseUser user) {
-        if (user != null) {
-            Log.d(TAG, "user data "+ user.getEmail());
-            Log.d(TAG, "user data "+ user.getUid());
-        }
+        goToNextActivity(currentUser);
     }
 
     @Override
@@ -79,16 +69,12 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         int i = v.getId();
         if (i == R.id.sign_in_button) {
             signIn();
-        } else if (i == R.id.sign_out_button) {
-            signOut();
-        } else if (i == R.id.disconnect_button) {
-            revokeAccess();
         }
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Log.d(TAG, "onConnectionFailed:" + connectionResult);
+        Toast.makeText(this, "Connection failed", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -100,27 +86,19 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
             if (result.isSuccess()) {
                 GoogleSignInAccount account = result.getSignInAccount();
                 firebaseAuthWithGoogle(account);
-            } else {
-                updateUI(null);
             }
         }
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            Log.d(TAG, "signInWithCredential:success");
                             FirebaseUser user = mAuth.getCurrentUser();
-                            updateUI(user);
-                        } else {
-                            Log.w(TAG, "signInWithCredential:failure", task.getException());
-                            updateUI(null);
+                            goToNextActivity(user);
                         }
                     }
                 });
@@ -137,7 +115,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 new ResultCallback<Status>() {
                     @Override
                     public void onResult(@NonNull Status status) {
-                        updateUI(null);
+                        goToNextActivity(null);
                     }
                 });
     }
@@ -148,9 +126,17 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 new ResultCallback<Status>() {
                     @Override
                     public void onResult(@NonNull Status status) {
-                        updateUI(null);
+                        goToNextActivity(null);
                     }
                 });
+    }
+
+    private void goToNextActivity(FirebaseUser user) {
+        if (user != null) {
+            Intent goToNextActivity = new Intent(getApplicationContext(), MainActivity.class);
+            goToNextActivity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(goToNextActivity);
+        }
     }
 
 }

@@ -19,8 +19,11 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private BroadcastReceiver mRegistrationBroadcastReceiver;
     private TextView txtRegId, txtMessage;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,44 +46,52 @@ public class MainActivity extends AppCompatActivity {
         txtRegId = (TextView) findViewById(R.id.txt_reg_id);
         txtMessage = (TextView) findViewById(R.id.txt_push_message);
 
-        displayFirebaseRegId();
+        mAuth = FirebaseAuth.getInstance();
+
+        validateUser();
     }
 
-    private  void registerBoardcastReceiver() {
+    private void validateUser() {
+        if (isAuthenticated() != null) {
+            registerBoardcastReceiver();
+            displayFirebaseRegId();
+        } else {
+            Intent goToLoginActivity = new Intent(getApplicationContext(), LoginActivity.class);
+            goToLoginActivity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(goToLoginActivity);
+        }
+    }
+
+    private String isAuthenticated() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        String userId = null;
+
+        if (currentUser != null) {
+            userId = currentUser.getUid();
+        }
+
+        return userId;
+    }
+
+    private void registerBoardcastReceiver() {
         mRegistrationBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.e(TAG, intent.getAction());
-                // checking for type intent filter
                 if (intent.getAction().equals(Config.REGISTRATION_COMPLETE)) {
-                    // gcm successfully registered
-                    // now subscribe to `global` topic to receive app wide notifications
                     FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_GLOBAL);
-
                     displayFirebaseRegId();
-
                 } else if (intent.getAction().equals(Config.PUSH_NOTIFICATION)) {
-                    // new push notification is received
-
                     String message = intent.getStringExtra("message");
-
-                    Toast.makeText(getApplicationContext(), "Push notification: " + message, Toast.LENGTH_LONG).show();
-
-                    txtMessage.setText(message);
                 }
             }
         };
     }
 
-    // Fetches reg id from shared preferences
-    // and displays on the screen
     private void displayFirebaseRegId() {
         SharedPreferences pref = getApplicationContext().getSharedPreferences(Config.SHARED_PREF, 0);
         String regId = pref.getString(Config.TOKEN, null);
 
-        Log.e(TAG, "Firebase reg id: " + regId);
-
-        if (!TextUtils.isEmpty(regId)){
+        if (!TextUtils.isEmpty(regId)) {
             txtRegId.setText("Firebase Reg Id: " + regId);
             postFirebaseRegId(regId);
         } else
@@ -87,30 +99,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void postFirebaseRegId(String regId) {
-        // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://shadow-phone-api.herokuapp.com/signon";
 
         Map<String, String> params = new HashMap();
         params.put("token", regId);
-        params.put("name", "samsung s5");
+        params.put("userId", isAuthenticated());
 
         JSONObject parameters = new JSONObject(params);
 
-        // Request a string response from the provided URL.
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.POST, url, parameters, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Log.e(TAG, "posted" +response.toString());
+                        try {
+                            JSONObject data = response.getJSONObject("data");
+                            String accessToken = data.getString("accessToken");
+
+                            SharedPreferences pref = getApplicationContext().getSharedPreferences(Config.USER_SHARED_PREF, 0);
+                            SharedPreferences.Editor editor = pref.edit();
+                            editor.putString(Config.ACCESS_TOKEN, accessToken);
+                            editor.commit();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "failed to post" + error.getMessage());
+                        Toast.makeText(getApplicationContext(), "Failed to register device", Toast.LENGTH_LONG).show();
                     }
                 });
-
         queue.add(jsObjRequest);
     }
 

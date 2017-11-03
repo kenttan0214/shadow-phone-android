@@ -23,8 +23,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        Log.e(TAG, "From: " + remoteMessage.getFrom());
-
         if (remoteMessage == null)
             return;
 
@@ -59,35 +57,36 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private void handleDataMessage(JSONObject json) {
-        Log.e(TAG, "push json: " + json.toString());
-
         try {
-            JSONObject data = json.getJSONObject("data");
+            JSONObject data = json.getJSONObject("message");
 
-            String title = data.getString("title");
-            String message = data.getString("message");
-            boolean isBackground = data.getBoolean("is_background");
-            String timestamp = data.getString("timestamp");
-            JSONObject payload = data.getJSONObject("payload");
+            JSONObject content = data.getJSONObject("content");
+            Log.e(TAG, content.getString("user"));
+            Log.e(TAG, content.getString("text"));
 
-            Log.e(TAG, "title: " + title);
-            Log.e(TAG, "message: " + message);
-            Log.e(TAG, "isBackground: " + isBackground);
-            Log.e(TAG, "payload: " + payload.toString());
-            Log.e(TAG, "timestamp: " + timestamp);
-
-
+//            String message = data.getString("message");
+//            boolean isBackground = data.getBoolean("is_background");
+//            String timestamp = data.getString("timestamp");
+//            JSONObject payload = data.getJSONObject("payload");
+//
+//            Log.e(TAG, "title: " + title);
+//            Log.e(TAG, "message: " + message);
+//            Log.e(TAG, "isBackground: " + isBackground);
+//            Log.e(TAG, "payload: " + payload.toString());
+//            Log.e(TAG, "timestamp: " + timestamp);
+//
+//
             if (!NotificationUtils.isAppIsInBackground(getApplicationContext())) {
                 // app is in foreground, broadcast the push message
                 Intent pushNotification = new Intent(Config.PUSH_NOTIFICATION);
-                pushNotification.putExtra("message", message);
+//                pushNotification.putExtra("message", message);
                 LocalBroadcastManager.getInstance(this).sendBroadcast(pushNotification);
             } else {
                 // app is in background, show the notification in notification tray
                 Intent resultIntent = new Intent(getApplicationContext(), MainActivity.class);
-                resultIntent.putExtra("message", message);
+//                resultIntent.putExtra("message", message);
 
-                showNotificationMessage(getApplicationContext(), title, message, timestamp, resultIntent);
+//                showNotificationMessage(getApplicationContext(), title, message, timestamp, resultIntent);
             }
         } catch (JSONException e) {
             Log.e(TAG, "Json Exception: " + e.getMessage());
