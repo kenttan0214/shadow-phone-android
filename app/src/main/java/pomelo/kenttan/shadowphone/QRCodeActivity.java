@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import pomelo.kenttan.shadowphone.util.Config;
+import pomelo.kenttan.shadowphone.util.Fetch;
 
 public class QRCodeActivity extends AppCompatActivity {
     private static final String TAG = QRCodeActivity.class.getSimpleName();
@@ -36,47 +37,35 @@ public class QRCodeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_qrcode);
 
         qrCodeView = (ImageView) findViewById(R.id.qrCodeImgView);
-
-        SharedPreferences pref = getApplicationContext().getSharedPreferences(Config.USER_SHARED_PREF, 0);
-        String accessToken = pref.getString(Config.ACCESS_TOKEN, "");
-        getQRCode(accessToken);
-
+        getQRCode();
     }
 
-    private void getQRCode(final String accessToken) {
+    private void getQRCode() {
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://shadow-phone-api.herokuapp.com/qr";
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONObject data = response.getJSONObject("data");
-                            String qr = data.getString("qr");
-                            displayBase64Image(qr);
-                            Log.d(TAG, "received QR code"+ qr);
-                        } catch (JSONException e) {
-                            Log.e(TAG, "failed to get QR code");
-                        } finally {
-
-                        }
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getApplicationContext(), "Failed to generate QR code", Toast.LENGTH_LONG).show();
-                    }
-                })
-        {
+        Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
             @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("x-access-token", accessToken);
-                return params;
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONObject data = response.getJSONObject("data");
+                    String qr = data.getString("qr");
+                    displayBase64Image(qr);
+                    Log.d(TAG, "received QR code"+ qr);
+                } catch (JSONException e) {
+                    Log.e(TAG, "failed to get QR code");
+                }
             }
         };
-        queue.add(jsObjRequest);
+
+        Response.ErrorListener errorListener =  new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getApplicationContext(), "Failed to generate QR code", Toast.LENGTH_LONG).show();
+            }
+        };
+
+        Fetch.GET(this, url, null, responseListener, errorListener);
     }
 
     private void displayBase64Image(String qrBase64) {

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import pomelo.kenttan.shadowphone.util.Config;
+import pomelo.kenttan.shadowphone.util.Fetch;
 import pomelo.kenttan.shadowphone.util.NotificationUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -105,35 +106,35 @@ public class MainActivity extends AppCompatActivity {
         params.put("userId", currentUser.getUid());
         params.put("userName", currentUser.getDisplayName());
 
-        JSONObject parameters = new JSONObject(params);
+        Response.Listener<JSONObject> responseListener = new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONObject data = response.getJSONObject("data");
+                    String accessToken = data.getString("accessToken");
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.POST, url, parameters, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONObject data = response.getJSONObject("data");
-                            String accessToken = data.getString("accessToken");
+                    SharedPreferences pref = getApplicationContext().getSharedPreferences(Config.USER_SHARED_PREF, 0);
+                    SharedPreferences.Editor editor = pref.edit();
+                    editor.putString(Config.ACCESS_TOKEN, accessToken);
+                    editor.commit();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } finally {
+                    showProgressDialog(false);
+                    goToSmsListActivity();
+                }
+            }
+        };
 
-                            SharedPreferences pref = getApplicationContext().getSharedPreferences(Config.USER_SHARED_PREF, 0);
-                            SharedPreferences.Editor editor = pref.edit();
-                            editor.putString(Config.ACCESS_TOKEN, accessToken);
-                            editor.commit();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } finally {
-                            showProgressDialog(false);
-                            goToSmsListActivity();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        showProgressDialog(false);
-                        Toast.makeText(getApplicationContext(), "Failed to register device", Toast.LENGTH_LONG).show();
-                    }
-                });
-        queue.add(jsObjRequest);
+        Response.ErrorListener errorListener = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                showProgressDialog(false);
+                Toast.makeText(getApplicationContext(), "Failed to register device", Toast.LENGTH_LONG).show();
+            }
+        };
+
+        Fetch.POST(this, url, params, responseListener, errorListener);
     }
 
     private void showProgressDialog(boolean show) {
