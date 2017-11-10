@@ -21,4 +21,6 @@ public class Config {
     public static final String ACCESS_TOKEN = "ACCESS_TOKEN";
 
     public static final String GOOGLE_REQUESTID_TOKEN = "721489690199-a289vf2smnnkvji6ikhvg1mtsqrr27hi.apps.googleusercontent.com";
+
+    public static final String QR_TAG = "QR_CODE";
 }

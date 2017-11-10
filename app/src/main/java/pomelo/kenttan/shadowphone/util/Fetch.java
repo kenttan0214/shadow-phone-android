@@ -34,8 +34,7 @@ public class Fetch {
             Context context, String url, Map<String, String> params,
             Response.Listener<JSONObject> responseListener, Response.ErrorListener errorListener,
             int RequestMethod) {
-        SharedPreferences pref = context.getSharedPreferences(Config.USER_SHARED_PREF, 0);
-        final String accessToken = pref.getString(Config.ACCESS_TOKEN, "");
+        final String accessToken = Auth.getAuthToken(context);
 
         RequestQueue queue = Volley.newRequestQueue(context);
 

@@ -43,7 +43,8 @@
         <activity android:name=".LoginActivity" />
         <activity android:name=".SmsListActivity" />
         <activity android:name=".QRCodeActivity" />
-        <activity android:name=".QRScannerActivity"></activity>
+        <activity android:name=".QRScannerActivity" />
+        <activity android:name=".DevicesListActivity"></activity>
     </application>
 
 </manifest>

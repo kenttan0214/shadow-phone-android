@@ -1,5 +1,6 @@
 package pomelo.kenttan.shadowphone;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -7,6 +8,7 @@ import android.util.Log;
 import com.google.zxing.Result;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
+import pomelo.kenttan.shadowphone.util.Config;
 
 public class QRScannerActivity extends AppCompatActivity implements ZXingScannerView.ResultHandler {
     private static final String TAG = QRScannerActivity.class.getSimpleName();
@@ -25,6 +27,7 @@ public class QRScannerActivity extends AppCompatActivity implements ZXingScanner
         super.onResume();
         mScannerView.setResultHandler(this);
         mScannerView.startCamera();
+        mScannerView.resumeCameraPreview(this);
     }
 
     @Override
@@ -40,5 +43,12 @@ public class QRScannerActivity extends AppCompatActivity implements ZXingScanner
 
         // If you would like to resume scanning, call this method below:
         // mScannerView.resumeCameraPreview(this);
+
+        Intent intent = new Intent(QRScannerActivity.this, DevicesListActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putString(Config.QR_TAG, rawResult.getText());
+        intent.putExtras(bundle);
+        startActivity(intent);
+        finish();
     }
 }

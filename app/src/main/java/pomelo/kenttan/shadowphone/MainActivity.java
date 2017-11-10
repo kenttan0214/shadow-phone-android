@@ -11,12 +11,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -27,6 +23,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import pomelo.kenttan.shadowphone.util.Auth;
 import pomelo.kenttan.shadowphone.util.Config;
 import pomelo.kenttan.shadowphone.util.Fetch;
 import pomelo.kenttan.shadowphone.util.NotificationUtils;
@@ -45,8 +42,12 @@ public class MainActivity extends AppCompatActivity {
         progressDialog = new ProgressDialog(this);
         mAuth = FirebaseAuth.getInstance();
 
-        showProgressDialog(true);
-        validateUser();
+        if (Auth.haveToken(this)) {
+            goToDeviceListActivity();
+        } else {
+            showProgressDialog(true);
+            validateUser();
+        }
     }
 
     private void validateUser() {
@@ -64,10 +65,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(loginAcgivity);
     }
 
-    private void goToSmsListActivity () {
-        Intent qrCodeActivity = new Intent(getApplicationContext(), QRCodeActivity.class);
-        qrCodeActivity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(qrCodeActivity);
+    private void goToDeviceListActivity() {
+        Intent deviceListActivity = new Intent(getApplicationContext(), DevicesListActivity.class);
+        deviceListActivity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(deviceListActivity);
     }
 
     private FirebaseUser getCurrentUser() {
@@ -98,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void registerDevice() {
         FirebaseUser currentUser = getCurrentUser();
-        RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://shadow-phone-api.herokuapp.com/signon";
 
         Map<String, String> params = new HashMap();
@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 } finally {
                     showProgressDialog(false);
-                    goToSmsListActivity();
+                    goToDeviceListActivity();
                 }
             }
         };
